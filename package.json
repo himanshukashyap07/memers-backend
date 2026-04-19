@@ -1,0 +1,45 @@
+{
+  "name": "todobackend",
+  "version": "1.0.0",
+  "description": "this is a backend for the todo appllication",
+  "license": "ISC",
+  "author": "Himanshu kashyap",
+  "type": "module",
+  "main": "index.ts",
+  "private": true,
+  "scripts": {
+    "start": "node dist/index",
+    "dev": "tsc-watch --onSuccess \"node ./dist/index.js\"",
+    "build": "tsc -p ."
+  },
+  "dependencies": {
+    "@imagekit/nodejs": "^7.5.0",
+    "@types/multer": "^2.1.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "imagekit": "^6.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^7.0.0",
+    "mongoose": "^9.0.0",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.5",
+    "resend": "^6.12.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.10.1",
+    "@types/nodemailer": "^8.0.0",
+    "prettier": "^3.7.0",
+    "tsc-watch": "^7.2.0",
+    "typescript": "^5.9.3"
+  }
+}

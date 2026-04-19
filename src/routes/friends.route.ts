@@ -1,0 +1,21 @@
+import { Router } from "express";
+import { 
+    createFollow, 
+    getFollowers, 
+    getFollowing, 
+    getFriends, 
+    followBack 
+} from "../controllers/friends.controller.js";
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+
+const router = Router();
+
+router.use(verifyJWT);
+
+router.route("/createFollow").post(createFollow);
+router.route("/getFollowers").get(getFollowers);
+router.route("/getFollowing").get(getFollowing);
+router.route("/getfriends").get(getFriends);
+router.route("/FollowBack").patch(followBack);
+
+export default router;

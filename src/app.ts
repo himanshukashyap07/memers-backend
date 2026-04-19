@@ -39,4 +39,4 @@ app.use("/api/v1/friends", friendRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/comments", commentRouter);
 
-export { app };
+export default app ;

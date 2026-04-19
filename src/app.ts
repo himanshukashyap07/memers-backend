@@ -30,6 +30,9 @@ import likeRouter from "./routes/likes.route.js";
 import commentRouter from "./routes/comments.route.js";
 
 // Routes declaration
+app.get("/",(req,res)=>{
+  res.send("Welcome to Memers API");
+});
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/post", postRouter);
 app.use("/api/v1/friends", friendRouter);

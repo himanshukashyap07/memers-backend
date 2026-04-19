@@ -1,18 +1,27 @@
 import "dotenv/config";
 import  app  from "./app.js";
 import connectDB from "./db/ConnectToDB.js";
-import { apiError } from "./utils/apiErrorHandler.js";
 
+const PORT = process.env.PORT || 8000;
 
-const PORT = process.env.PORT;
-connectDB().then((): void => {
-    const server = app.listen(PORT || 8000, (): void => {
-        console.log("server is running at port 8000");
-    });
-    server.on("error", (error: Error): void => {
-        console.log("Error occurred in the server run.");
-        throw new apiError(500,"database is not connected")
-    });
-}).catch((): void => {
-    console.log("mongodb connection failed");
-});
+// Handle database connection and server startup
+const initializeApp = async () => {
+    try {
+        await connectDB();
+        
+        // Only start the server listener if we're not running in a serverless environment
+        // Vercel handles the listener itself
+        if (process.env.NODE_ENV !== "production") {
+            app.listen(PORT, () => {
+                console.log(`Server is running at port ${PORT}`);
+            });
+        }
+    } catch (error) {
+        console.error("Failed to initialize app:", error);
+    }
+};
+
+initializeApp();
+
+// Export for Vercel
+export default app;

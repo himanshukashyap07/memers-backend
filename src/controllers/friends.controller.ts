@@ -34,19 +34,25 @@ const createFollow = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const getFollowers = asyncHandler(async (req: Request, res: Response) => {
+    const { userId } = req.query;
     const user = req.user as IUser;
-    const followers = await Friends.find({ 
+    const targetUserId = userId || user._id;
+
+    const followers = await Friends.find({
         //@ts-ignore
-        friendId: user._id 
+        friendId: targetUserId
     }).populate("userId", "username email avatar");
     return res.status(200).json(new ApiResponse(200, followers, "Followers fetched successfully"));
 });
 
 const getFollowing = asyncHandler(async (req: Request, res: Response) => {
+    const { userId } = req.query;
     const user = req.user as IUser;
-    const following = await Friends.find({ 
+    const targetUserId = userId || user._id;
+
+    const following = await Friends.find({
         //@ts-ignore
-        userId: user._id 
+        userId: targetUserId
     }).populate("friendId", "username email avatar");
     return res.status(200).json(new ApiResponse(200, following, "Following list fetched successfully"));
 });
@@ -98,8 +104,21 @@ const followBack = asyncHandler(async (req: Request, res: Response) => {
             isFriend: true 
         });
     }
-
     return res.status(200).json(new ApiResponse(200, follow, "Followed back successfully. You are now friends!"));
+});
+
+const unfollowUser = asyncHandler(async (req: Request, res: Response) => {
+    const { friendId } = req.body;
+    const user = req.user as IUser;
+    const userId = user._id;
+
+    await Friends.findOneAndDelete({
+        //@ts-ignore
+        userId,
+        friendId
+    });
+
+    return res.status(200).json(new ApiResponse(200, {}, "Unfollowed successfully"));
 });
 
 export {
@@ -107,5 +126,6 @@ export {
     getFollowers,
     getFollowing,
     getFriends,
-    followBack
+    followBack,
+    unfollowUser
 };

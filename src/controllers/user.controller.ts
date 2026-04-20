@@ -9,6 +9,8 @@ import bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import { sendVerificationEmail } from "../utils/resendEmail.js";
 import { uploadOnImageKit } from "../utils/imageKit.js";
+import Friends from "../models/Friends.model.js";
+import Post from "../models/Post.model.js";
 
 const genrateAccessAndRefershToken = async (userId: any) => {
     try {
@@ -48,11 +50,11 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
         role = "admin";
     }
 
-    const avatarLocalPath = req.file?.path;
+    const avatarBuffer = req.file?.buffer;
     let avatarUrl = process.env.DEFAULT_AVATAR_URL || "https://via.placeholder.com/150";
 
-    if (avatarLocalPath) {
-        const uploadResponse = await uploadOnImageKit(avatarLocalPath);
+    if (avatarBuffer) {
+        const uploadResponse = await uploadOnImageKit(avatarBuffer, req.file?.originalname || "avatar.jpg");
         if (uploadResponse) {
             avatarUrl = uploadResponse.url;
         }
@@ -182,9 +184,17 @@ const logOutUser = asyncHandler(async (req: Request, res: Response) => {
 });
 const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
     const user = req.user as IUser;
+    
+    const followersCount = await Friends.countDocuments({ friendId: user._id });
+    const followingCount = await Friends.countDocuments({ userId: user._id });
+
     return res.status(200)
-        .json(new ApiResponse(200, user, "user fetched successfully"));
-})
+        .json(new ApiResponse(200, {
+            ...user.toObject(),
+            followersCount,
+            followingCount
+        }, "user fetched successfully"));
+});
 
 const updateUserPassword = asyncHandler(async (req: Request, res: Response) => {
     const { oldPassword, newPassword } = req.body;
@@ -211,13 +221,13 @@ const updateUserPassword = asyncHandler(async (req: Request, res: Response) => {
 })
 
 const updateUserAvatar = asyncHandler(async (req: Request, res: Response) => {
-    const avatarLocalPath = req.file?.path;
+    const avatarBuffer = req.file?.buffer;
 
-    if (!avatarLocalPath) {
+    if (!avatarBuffer) {
         throw new apiError(400, "Avatar file is missing");
     }
 
-    const avatar = await uploadOnImageKit(avatarLocalPath);
+    const avatar = await uploadOnImageKit(avatarBuffer, req.file?.originalname || "avatar.jpg");
 
     if (!avatar) {
         throw new apiError(400, "Error while uploading avatar");
@@ -290,6 +300,42 @@ const deleteUser = asyncHandler(async (req: Request, res: Response) => {
 })
 
 
+const getUserProfile = asyncHandler(async (req: Request, res: Response) => {
+    const { userId } = req.query;
+
+    if (!userId) {
+        throw new apiError(400, "User ID is required");
+    }
+
+    const user = await User.findById(userId).select("-password -refreshToken -verificationToken");
+    if (!user) {
+        throw new apiError(404, "User not found");
+    }
+
+    const postsCount = await Post.countDocuments({ userId });
+    const followersCount = await Friends.countDocuments({ friendId: userId });
+    const followingCount = await Friends.countDocuments({ userId });
+
+    const currentUser = req.user as IUser;
+    let isFollowing = false;
+    if (currentUser) {
+        const follow = await Friends.findOne({
+            //@ts-ignore
+            userId: currentUser._id,
+            friendId: userId
+        });
+        isFollowing = !!follow;
+    }
+
+    return res.status(200).json(new ApiResponse(200, {
+        ...user.toObject(),
+        postsCount,
+        followersCount,
+        followingCount,
+        isFollowing
+    }, "User profile fetched successfully"));
+});
+
 export {
     registerUser,
     verifyUser,
@@ -298,6 +344,7 @@ export {
     getCurrentUser,
     updateUserPassword,
     updateUserAvatar,
+    getUserProfile,
     getAllUsers,
     toggleBlockUser,
     deleteUser

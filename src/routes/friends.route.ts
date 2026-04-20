@@ -4,7 +4,8 @@ import {
     getFollowers, 
     getFollowing, 
     getFriends, 
-    followBack 
+    followBack,
+    unfollowUser
 } from "../controllers/friends.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -17,5 +18,6 @@ router.route("/getFollowers").get(getFollowers);
 router.route("/getFollowing").get(getFollowing);
 router.route("/getfriends").get(getFriends);
 router.route("/FollowBack").patch(followBack);
+router.route("/unfollow").post(unfollowUser);
 
 export default router;

@@ -10,16 +10,16 @@ import type { Request, Response } from "express";
 
 const createPost = asyncHandler(async (req: Request, res: Response) => {
     const { text } = req.body;
-    const imageLocalPath = req.file?.path;
+    const imageBuffer = req.file?.buffer;
 
-    if (!imageLocalPath) {
+    if (!imageBuffer) {
         throw new apiError(400, "Image is required");
     }
 
     // Extract hashtags
     const hashtags = text ? text.match(/#[a-z0-9_]+/gi)?.map((tag: string) => tag.slice(1).toLowerCase()) || [] : [];
 
-    const image = await uploadOnImageKit(imageLocalPath);
+    const image = await uploadOnImageKit(imageBuffer, req.file?.originalname || "post_image.jpg");
 
     if (!image) {
         throw new apiError(400, "Error while uploading image to ImageKit");
@@ -42,18 +42,18 @@ const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
     const posts = await Post.find()
         .populate("userId", "username avatar")
         .sort({ createdAt: -1 });
-    
+
     // Add likes and comments count to each post
     const postsWithDetails = await Promise.all(posts.map(async (post) => {
         const likesCount = await Like.countDocuments({ postId: post._id });
         const commentsCount = await Comment.countDocuments({ postId: post._id });
-        
+
         let isLiked = false;
         if (user) {
-            const liked = await Like.findOne({ 
+            const liked = await Like.findOne({
                 //@ts-ignore
-                postId: post._id, 
-                userId: user._id 
+                postId: post._id,
+                userId: user._id
             });
             isLiked = !!liked;
         }
@@ -65,7 +65,7 @@ const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
             isLiked
         };
     }));
-    
+
     return res.status(200).json(new ApiResponse(200, postsWithDetails, "Posts fetched successfully"));
 });
 
@@ -108,16 +108,23 @@ const deletePost = asyncHandler(async (req: Request, res: Response) => {
         throw new apiError(403, "You do not have permission to delete this post");
     }
 
+    // Delete associated likes and comments
+    await Like.deleteMany({ postId });
+    await Comment.deleteMany({ postId });
+
     await Post.findByIdAndDelete(postId);
 
     return res.status(200).json(new ApiResponse(200, {}, "Post deleted successfully"));
 });
 
 const getUserPosts = asyncHandler(async (req: Request, res: Response) => {
+    const { userId } = req.query;
     const user = req.user as IUser;
-    const posts = await Post.find({ 
+    const targetUserId = userId || user._id;
+
+    const posts = await Post.find({
         //@ts-ignore
-        userId: user._id 
+        userId: targetUserId
     }).sort({ createdAt: -1 });
     return res.status(200).json(new ApiResponse(200, posts, "User posts fetched successfully"));
 });
@@ -128,8 +135,8 @@ const getPostsByHashtag = asyncHandler(async (req: Request, res: Response) => {
         throw new apiError(400, "Hashtag is required");
     }
 
-    const posts = await Post.find({ 
-        hashtags: (hashtag as string).toLowerCase() 
+    const posts = await Post.find({
+        hashtags: (hashtag as string).toLowerCase()
     }).populate("userId", "username avatar").sort({ createdAt: -1 });
 
     return res.status(200).json(new ApiResponse(200, posts, `Posts with hashtag #${hashtag} fetched`));

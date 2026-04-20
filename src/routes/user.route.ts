@@ -7,6 +7,7 @@ import {
     updateUserPassword,
     verifyUser,
     updateUserAvatar,
+    getUserProfile,
     getAllUsers,
     toggleBlockUser,
     deleteUser
@@ -26,6 +27,7 @@ router.route("/currentUser").get(verifyJWT, getCurrentUser);
 router.route("/logout").post(verifyJWT, logOutUser);
 router.route("/updatePassword").patch(verifyJWT, updateUserPassword);
 router.route("/updateAvatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
+router.route("/getUserProfile").get(verifyJWT, getUserProfile);
 
 // Admin routes
 router.route("/users").get(verifyJWT, getAllUsers);

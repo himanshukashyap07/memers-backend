@@ -2,6 +2,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { apiError } from "../utils/apiErrorHandler.js";
 import { ApiResponse } from "../utils/apiResponseHandler.js";
 import Comment from "../models/Comment.model.js";
+import Post from "../models/Post.model.js";
+import Notification from "../models/Notification.model.js";
 import { type IUser } from "../models/User.model.js";
 import type { Request, Response } from "express";
 
@@ -20,6 +22,18 @@ const createComment = asyncHandler(async (req: Request, res: Response) => {
         postId,
         comment
     });
+
+    // Create notification
+    const post = await Post.findById(postId);
+    if (post && post.userId.toString() !== userId.toString()) {
+        await Notification.create({
+            recipient: post.userId,
+            sender: userId,
+            type: "comment",
+            postId,
+            commentId: newComment._id
+        });
+    }
 
     return res.status(201).json(new ApiResponse(201, newComment, "Comment added successfully"));
 });
@@ -74,9 +88,24 @@ const deleteComment = asyncHandler(async (req: Request, res: Response) => {
     return res.status(200).json(new ApiResponse(200, {}, "Comment deleted successfully"));
 });
 
+const getAdminAllComments = asyncHandler(async (req: Request, res: Response) => {
+    const user = req.user as IUser;
+    if (user.role !== "admin") {
+        throw new apiError(403, "Access denied");
+    }
+
+    const comments = await Comment.find()
+        .populate("userId", "username email avatar")
+        .populate("postId", "text url")
+        .sort({ createdAt: -1 });
+    
+    return res.status(200).json(new ApiResponse(200, comments, "All comments fetched successfully"));
+});
+
 export {
     createComment,
     getAllComment,
     updateComment,
-    deleteComment
+    deleteComment,
+    getAdminAllComments
 };

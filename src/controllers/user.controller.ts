@@ -11,6 +11,9 @@ import { sendVerificationEmail } from "../utils/resendEmail.js";
 import { uploadOnImageKit } from "../utils/imageKit.js";
 import Friends from "../models/Friends.model.js";
 import Post from "../models/Post.model.js";
+import Comment from "../models/Comment.model.js";
+import Like from "../models/Like.model.js";
+import Notification from "../models/Notification.model.js";
 
 const genrateAccessAndRefershToken = async (userId: any) => {
     try {
@@ -294,9 +297,27 @@ const deleteUser = asyncHandler(async (req: Request, res: Response) => {
         throw new apiError(404, "User not found");
     }
 
+    // Cascade delete associated data
+    // 1. Find all posts by this user to cleanup likes/comments on those posts
+    const userPosts = await Post.find({ userId });
+    const postIds = userPosts.map(p => p._id);
+
+    // 2. Delete all likes and comments ON the user's posts (orphans)
+    await Comment.deleteMany({ postId: { $in: postIds } });
+    await Like.deleteMany({ postId: { $in: postIds } });
+
+    // 3. Delete user's own generated content
+    await Post.deleteMany({ userId });
+    await Comment.deleteMany({ userId });
+    await Like.deleteMany({ userId });
+
+    // 4. Delete relationships and notifications
+    await Friends.deleteMany({ $or: [{ userId }, { friendId: userId }] });
+    await Notification.deleteMany({ $or: [{ recipient: userId }, { sender: userId }] });
+
     await User.findByIdAndDelete(userId);
 
-    return res.status(200).json(new ApiResponse(200, {}, "User deleted successfully"));
+    return res.status(200).json(new ApiResponse(200, {}, "User and all associated data deleted successfully"));
 })
 
 
@@ -318,13 +339,24 @@ const getUserProfile = asyncHandler(async (req: Request, res: Response) => {
 
     const currentUser = req.user as IUser;
     let isFollowing = false;
+    let followsMe = false;
+
     if (currentUser) {
+        // Check if current user follows target
         const follow = await Friends.findOne({
             //@ts-ignore
             userId: currentUser._id,
             friendId: userId
         });
         isFollowing = !!follow;
+
+        // Check if target follows current user
+        const followMe = await Friends.findOne({
+            //@ts-ignore
+            userId: userId,
+            friendId: currentUser._id
+        });
+        followsMe = !!followMe;
     }
 
     return res.status(200).json(new ApiResponse(200, {
@@ -332,7 +364,8 @@ const getUserProfile = asyncHandler(async (req: Request, res: Response) => {
         postsCount,
         followersCount,
         followingCount,
-        isFollowing
+        isFollowing,
+        followsMe
     }, "User profile fetched successfully"));
 });
 

@@ -28,9 +28,10 @@ import postRouter from "./routes/post.route.js";
 import friendRouter from "./routes/friends.route.js";
 import likeRouter from "./routes/likes.route.js";
 import commentRouter from "./routes/comments.route.js";
+import notificationRouter from "./routes/notification.route.js";
 
 // Routes declaration
-app.get("/",(req,res)=>{
+app.get("/", (req, res) => {
   res.send("Welcome to Memers API");
 });
 app.use("/api/v1/user", userRouter);
@@ -38,5 +39,6 @@ app.use("/api/v1/post", postRouter);
 app.use("/api/v1/friends", friendRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/comments", commentRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
-export default app ;
+export default app;

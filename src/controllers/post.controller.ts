@@ -40,11 +40,13 @@ const createPost = asyncHandler(async (req: Request, res: Response) => {
 const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
     const user = req.user as IUser;
     const posts = await Post.find()
-        .populate("userId", "username avatar")
-        .sort({ createdAt: -1 });
+        .populate("userId", "username avatar");
+
+    // Randomize posts (Jumble feed)
+    const shuffledPosts = posts.sort(() => Math.random() - 0.5);
 
     // Add likes and comments count to each post
-    const postsWithDetails = await Promise.all(posts.map(async (post) => {
+    const postsWithDetails = await Promise.all(shuffledPosts.map(async (post) => {
         const likesCount = await Like.countDocuments({ postId: post._id });
         const commentsCount = await Comment.countDocuments({ postId: post._id });
 

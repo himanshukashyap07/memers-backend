@@ -10,7 +10,8 @@ import {
     getUserProfile,
     getAllUsers,
     toggleBlockUser,
-    deleteUser
+    deleteUser,
+    getTopFamousUsers
 } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -28,6 +29,7 @@ router.route("/logout").post(verifyJWT, logOutUser);
 router.route("/updatePassword").patch(verifyJWT, updateUserPassword);
 router.route("/updateAvatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar);
 router.route("/getUserProfile").get(verifyJWT, getUserProfile);
+router.route("/topFamousUsers").get(verifyJWT, getTopFamousUsers);
 
 // Admin routes
 router.route("/users").get(verifyJWT, getAllUsers);

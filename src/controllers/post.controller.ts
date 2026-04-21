@@ -64,6 +64,7 @@ const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
             ...post.toObject(),
             likesCount,
             commentsCount,
+            sharesCount: post.sharesCount || 0,
             isLiked
         };
     }));
@@ -144,11 +145,31 @@ const getPostsByHashtag = asyncHandler(async (req: Request, res: Response) => {
     return res.status(200).json(new ApiResponse(200, posts, `Posts with hashtag #${hashtag} fetched`));
 });
 
+const incrementShareCount = asyncHandler(async (req: Request, res: Response) => {
+    const { postId } = req.body;
+    if (!postId) {
+        throw new apiError(400, "Post ID is required");
+    }
+
+    const post = await Post.findByIdAndUpdate(
+        postId,
+        { $inc: { sharesCount: 1 } },
+        { new: true }
+    );
+
+    if (!post) {
+        throw new apiError(404, "Post not found");
+    }
+
+    return res.status(200).json(new ApiResponse(200, post, "Share count incremented"));
+});
+
 export {
     createPost,
     getAllPosts,
     updatePost,
     deletePost,
     getUserPosts,
-    getPostsByHashtag
+    getPostsByHashtag,
+    incrementShareCount
 };

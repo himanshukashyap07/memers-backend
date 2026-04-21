@@ -5,6 +5,7 @@ export interface IPost extends Document {
     userId: mongoose.Types.ObjectId;
     url: string;
     hashtags: string[];
+    sharesCount: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -27,6 +28,10 @@ const postSchema: Schema = new Schema({
     hashtags: {
         type: [String],
         default: []
+    },
+    sharesCount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 

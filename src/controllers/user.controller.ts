@@ -187,7 +187,7 @@ const logOutUser = asyncHandler(async (req: Request, res: Response) => {
 });
 const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
     const user = req.user as IUser;
-    
+
     const followersCount = await Friends.countDocuments({ friendId: user._id });
     const followingCount = await Friends.countDocuments({ userId: user._id });
 
@@ -369,6 +369,19 @@ const getUserProfile = asyncHandler(async (req: Request, res: Response) => {
     }, "User profile fetched successfully"));
 });
 
+const getTopFamousUsers = asyncHandler(async (req: Request, res: Response) => {
+    const topUsers = await Friends.aggregate([
+        { $group: { _id: "$friendId", followersCount: { $sum: 1 } } },
+        { $sort: { followersCount: -1 } },
+        { $limit: 5 },
+        { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "user" } },
+        { $unwind: "$user" },
+        { $project: { _id: "$user._id", username: "$user.username", avatar: "$user.avatar", followersCount: 1 } }
+    ]);
+
+    return res.status(200).json(new ApiResponse(200, topUsers, "Top famous users fetched successfully"));
+});
+
 export {
     registerUser,
     verifyUser,
@@ -380,5 +393,6 @@ export {
     getUserProfile,
     getAllUsers,
     toggleBlockUser,
-    deleteUser
+    deleteUser,
+    getTopFamousUsers
 };

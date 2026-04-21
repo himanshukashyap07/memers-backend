@@ -5,7 +5,8 @@ import {
     updatePost, 
     deletePost,
     getUserPosts,
-    getPostsByHashtag
+    getPostsByHashtag,
+    incrementShareCount
 } from "../controllers/post.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -20,5 +21,6 @@ router.route("/updatePost").patch(updatePost);
 router.route("/deletePost").delete(deletePost);
 router.route("/getUserPost").get(getUserPosts);
 router.route("/getPostsByHashtag").get(getPostsByHashtag);
+router.route("/incrementShareCount").post(incrementShareCount);
 
 export default router;
